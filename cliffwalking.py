@@ -1,78 +1,67 @@
 import gymnasium as gym
-import random
+import numpy as np
 
-def random_actions():
-    return [round(random.uniform(-2.00, 2.00), 2) for j in range(4)]
-    #return [-1 for j in range(4)]
-    #return [0 for j in range(4)]
+# Create the Cliff Walking environment
+env = gym.make('CliffWalking-v0')
 
-env = gym.make('CliffWalking-v0', render_mode="human")
+# Set the discount factor
+gamma = 0.99
 
-action_table = [random_actions() for i in range(48)]
-action_table[35] = [-1, -1, 10, -1]
-action_table[47] = [0,0,0,0]
-
-# local_list = action_table[2]
-# max_value = local_list.index(max(local_list))
-# action = action_table[2][max_value]
-# print(action)
-
-#print(action_table)
+# Set the learning rate
 alpha = 0.1
-epsilon = 1.0
-gamma = 0.1
 
-num_steps = 10000
-step_counter = 0
-observation = env.reset()
-observed_state = observation[0]
-for i in range(num_steps):
-    env.render()
+# Set the number of episodes to train for
+num_episodes = 1000
 
-    probability = random.random()
+# Set the maximum number of steps per episode
+max_steps_per_episode = 100
 
-    local_list = action_table[observed_state]  
-    if (probability < epsilon):
-        action = random.randint(0,3)
-        print('tar random action')
-    else:
-        action = local_list.index(max(local_list))
+# Set the exploration rate
+exploration_rate = 1.0
 
-    if (alpha > 0.01 and i % 100 == 0):        
-        alpha -= 0.01
-        print(f'Alpha nu {alpha}')
-      
-    state_value_of_action = local_list[action]
-    observation, reward, done, truncated, info = env.step(action)
+# Set the exploration decay rate
+exploration_decay_rate = 0.001
 
-    print(f'Step {i}: observation={observation}, \
-           reward={reward}, done={done}, info={info}, action={action}')#, värde={round(state_value_of_action, 2)}, av: {local_list}')
-    
-    if (observation == 35):
-        print(action_table[35])
+# Create the Q-table
+q_table = np.zeros((env.observation_space.n, env.action_space.n))
 
-    local_list = action_table[observation]
-    max_state_prime_value = max(local_list)
-    action_table[observed_state][action] = state_value_of_action + alpha * (reward + gamma * max_state_prime_value - state_value_of_action)
+# Train the agent
+for episode in range(num_episodes):
+    # Reset the environment
+    observation_env = env.reset()
+    observation = observation_env[0]
+    # Set the initial reward
+    reward = 0
 
-    observed_state = observation
-    if done or step_counter == 100:
-        observation = env.reset()
-        observed_state = observation[0]
-        step_counter = 0
-    
-    step_counter += 1
-    epsilon -= 0.001
+    # Set the initial done flag
+    done = False
 
-env.close()
+    # Set the initial step count
+    step = 0
 
+    # Take the given number of steps
+    while not done and step < max_steps_per_episode:
+        # Choose an action
+        if np.random.uniform(0, 1) > exploration_rate:
+            action = np.argmax(q_table[observation])
+        else:
+            action = env.action_space.sample()
 
-for (k, item) in enumerate(action_table):
-    print(k, item)
+        # Take the action and get the next observation, reward, and done flag
+        next_observation, reward, done, truncated, info = env.step(action)
 
-# new_observation_value = 1.7
-# local_list = action_table[new_observation_value]
-# max_value = 1.7
-# val = round(1.5 + alpha * (-1 + gamma * 1.7 - 1.5), 2)
+        #next_observation = next_observation_env[0]
+        # Update the Q-value for the current state and action
+        q_table[observation, action] = q_table[observation, action] + alpha * (reward + gamma * np.max(q_table[next_observation]) - q_table[observation, action])
 
-# print(val)
+        # Set the current observation to the next observation
+        observation = next_observation
+
+        # Increment the step count
+        step += 1
+
+    # Decrease the exploration rate
+    exploration_rate = exploration_rate * (1 - exploration_decay_rate)
+
+for (i, item) in enumerate(q_table):
+    print(i, item)
