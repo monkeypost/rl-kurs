@@ -7,36 +7,33 @@ env = gym.make('CliffWalking-v0')
 env.reset()
 
 states = []
-for i in range(37):
+for i in range(48):
     states.append(0)
 
-for i in range(37, 47):
-    states.append(1.11111) #Just to make print even
-states.append(0)
+gamma = 0.8
 
-gamma = 0.9
-
-do_not_caluclate = list(range(37, 48))
 for e in range(100):
     threshold = 0
-    for s in range(len(states)):       
-        is_in_range = do_not_caluclate.count(s)
-        if (is_in_range == 0): 
-            expected_value = 0
-            for a in (range(4)):
-                current_value = states[s]
-                s_prime = env.unwrapped.P[s][a][0][1]
-                r = env.unwrapped.P[s][a][0][2]
-                if (r == -100): #Without this the agent gets trapped in left corner
-                    r = -1 
-                expected_value += 0.25 * (r + gamma * states[s_prime])
-            current_value
-                
-            states[s] = round(expected_value, 5)
+    for s in range(48):       
+        expected_value = 0
+        for a in (range(4)):
+            current_value = states[s]
+            s_prime = env.unwrapped.P[s][a][0][1]
+            r = env.unwrapped.P[s][a][0][2]
+            
+            #observation, reward, done, truncated, info = env.step(a)
+            #if (r == -100): #Without this the agent gets trapped in left corner
+            #    r = -1 
+            expected_value += 0.25 * (r + gamma * states[s_prime])
+        current_value
+            
+        states[s] = round(expected_value, 5)
+    print(f"Iteration: {e}")        
+    print(np.reshape(states, (4,12)))
 
 
-print(np.reshape(states, (4,12)))
-# För att utvärdra policyn
+#print(np.reshape(states, (4,12)))
+# Evaluate policy
 done = False
 
 env = gym.make('CliffWalking-v0', render_mode="human")
