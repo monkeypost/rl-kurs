@@ -20,10 +20,13 @@ for e in range(100):
             current_value = states[s]
             s_prime = env.unwrapped.P[s][a][0][1]
             r = env.unwrapped.P[s][a][0][2]
+            terminal = env.unwrapped.P[s][a][0][3]
             
-            #observation, reward, done, truncated, info = env.step(a)
-            #if (r == -100): #Without this the agent gets trapped in left corner
-            #    r = -1 
+            if (r == -100): #Without this the agent gets trapped in left corner
+                r = -1 
+
+            if (terminal):
+                r = 10
             expected_value += 0.25 * (r + gamma * states[s_prime])
         current_value
             
